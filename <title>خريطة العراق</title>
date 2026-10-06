@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خريطة العراق</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+body{
+  margin:0;
+  font-family:Arial,Tahoma,sans-serif;
+  background:#111;
+  color:#fff;
+  overflow:hidden;
+}
+
+#map{
+  position:absolute;
+  inset:0;
+  z-index:1;
+}
+
+.top{
+  position:absolute;
+  top:15px;
+  right:12px;
+  left:12px;
+  z-index:1000;
+}
+
+.searchBox{
+  background:#fff;
+  color:#111;
+  border-radius:18px;
+  padding:8px;
+  display:flex;
+  align-items:center;
+  box-shadow:0 5px 20px #0005;
+}
+
+.searchBox input{
+  border:0;
+  outline:0;
+  flex:1;
+  padding:12px;
+  font-size:16px;
+  direction:rtl;
+}
+
+.searchBtn{
+  width:45px;
+  height:45px;
+  border:0;
+  border-radius:14px;
+  background:#1976d2;
+  color:white;
+  font-size:20px;
+}
+
+.results{
+  margin-top:8px;
+  background:white;
+  color:#111;
+  border-radius:15px;
+  overflow:hidden;
+  display:none;
+  max-height:260px;
+  overflow-y:auto;
+}
+
+.result{
+  padding:13px;
+  border-bottom:1px solid #ddd;
+  cursor:pointer;
+}
+
+.result:hover{
+  background:#eee;
+}
+
+.logo{
+  position:absolute;
+  top:90px;
+  right:15px;
+  z-index:900;
+  background:#111d;
+  backdrop-filter:blur(8px);
+  padding:10px 15px;
+  border-radius:15px;
+  font-weight:bold;
+  font-size:18px;
+}
+
+.logo span{
+  color:#22a7ff;
+}
+
+.controls{
+  position:absolute;
+  left:15px;
+  bottom:120px;
+  z-index:1000;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.control{
+  width:52px;
+  height:52px;
+  border:0;
+  border-radius:50%;
+  background:white;
+  color:#111;
+  font-size:21px;
+  box-shadow:0 4px 15px #0005;
+}
+
+.control.blue{
+  background:#1976d2;
+  color:white;
+}
+
+.bottom{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:1000;
+  background:#fff;
+  color:#111;
+  border-radius:25px 25px 0 0;
+  padding:12px 15px calc(12px + env(safe-area-inset-bottom));
+  box-shadow:0 -5px 20px #0004;
+}
+
+.bottomButtons{
+  display:flex;
+  justify-content:space-around;
+  gap:8px;
+}
+
+.bottomBtn{
+  flex:1;
+  border:0;
+  background:#f1f1f1;
+  padding:10px 5px;
+  border-radius:14px;
+  font-size:12px;
+}
+
+.bottomBtn b{
+  display:block;
+  font-size:20px;
+  margin-bottom:4px;
+}
+
+.routePanel{
+  position:absolute;
+  top:95px;
+  left:12px;
+  right:12px;
+  z-index:1100;
+  background:white;
+  color:#111;
+  border-radius:20px;
+  padding:15px;
+  display:none;
+  box-shadow:0 5px 25px #0005;
+}
+
+.routeTitle{
+  font-weight:bold;
+  font-size:18px;
+}
+
+.routeInfo{
+  margin-top:8px;
+  color:#555;
+}
+
+.startBtn{
+  width:100%;
+  border:0;
+  background:#18a558;
+  color:white;
+  padding:13px;
+  margin-top:12px;
+  border-radius:13px;
+  font-size:16px;
+}
+
+.closeRoute{
+  position:absolute;
+  top:10px;
+  left:10px;
+  border:0;
+  background:#eee;
+  border-radius:50%;
+  width:32px;
+  height:32px;
+}
+
+.reportPanel{
+  position:absolute;
+  inset:auto 10px 95px 10px;
+  z-index:1200;
+  background:white;
+  color:#111;
+  border-radius:22px;
+  padding:18px;
+  display:none;
+  box-shadow:0 5px 30px #0007;
+}
+
+.reportPanel h3{
+  margin-top:0;
+}
+
+.reportGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.report{
+  border:0;
+  padding:16px 8px;
+  border-radius:15px;
+  background:#eee;
+  font-size:14px;
+}
+
+.report b{
+  display:block;
+  font-size:25px;
+  margin-bottom:5px;
+}
+
+.dark{
+  filter:invert(.9) hue-rotate(180deg);
+}
+
+.dark .leaflet-control,
+.dark .bottom,
+.dark .searchBox,
+.dark .routePanel,
+.dark .reportPanel,
+.dark .results{
+  filter:invert(1) hue-rotate(180deg);
+}
+
+.toast{
+  position:absolute;
+  z-index:2000;
+  bottom:170px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#111e;
+  color:white;
+  padding:12px 18px;
+  border-radius:20px;
+  display:none;
+  white-space:nowrap;
+}
+
+.navInfo{
+  position:absolute;
+  top:15px;
+  left:15px;
+  z-index:1100;
+  background:#1976d2;
+  color:white;
+  padding:12px 16px;
+  border-radius:16px;
+  display:none;
+}
+
+.leaflet-popup-content{
+  font-family:Arial,Tahoma,sans-serif;
+  text-align:right;
+}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div class="top">
+  <div class="searchBox">
+    <input id="searchInput"
+           placeholder="ابحث عن مكان بالعراق..."
+           autocomplete="off">
+    <button class="searchBtn" onclick="searchPlace()">🔍</button>
+  </div>
+
+  <div id="results" class="results"></div>
+</div>
+
+<div class="logo">
+  🇮🇶 <span>خريطة</span> العراق
+</div>
+
+<div id="routePanel" class="routePanel">
+  <button class="closeRoute" onclick="closeRoute()">×</button>
+  <div class="routeTitle" id="routeTitle">المسار</div>
+  <div class="routeInfo" id="routeInfo"></div>
+  <button class="startBtn" onclick="startNavigation()">
+    🚗 ابدأ الملاحة
+  </button>
+</div>
+
+<div id="navInfo" class="navInfo">
+  🚗 الملاحة شغالة
+</div>
+
+<div class="controls">
+  <button class="control blue" onclick="locateMe()">📍</button>
+  <button class="control" onclick="zoomIn()">＋</button>
+  <button class="control" onclick="zoomOut()">−</button>
+  <button class="control" onclick="toggleDark()">🌙</button>
+</div>
+
+<div id="reportPanel" class="reportPanel">
+  <h3>🚨 بلّغ عن مشكلة</h3>
+
+  <div class="reportGrid">
+
+    <button class="report" onclick="addReport('حادث','🚗')">
+      <b>🚗</b>
+      حادث
+    </button>
+
+    <button class="report" onclick="addReport('زحمة','🚦')">
+      <b>🚦</b>
+      زحمة
+    </button>
+
+    <button class="report" onclick="addReport('طريق مغلق','⛔')">
+      <b>⛔</b>
+      طريق مغلق
+    </button>
+
+    <button class="report" onclick="addReport('خطر بالطريق','⚠️')">
+      <b>⚠️</b>
+      خطر
+    </button>
+
+    <button class="report" onclick="addReport('رادار','📸')">
+      <b>📸</b>
+      رادار
+    </button>
+
+    <button class="report" onclick="addReport('نقطة تفتيش','👮')">
+      <b>👮</b>
+      نقطة تفتيش
+    </button>
+
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="bottom">
+  <div class="bottomButtons">
+
+    <button class="bottomBtn" onclick="goHome()">
+      <b>🏠</b>
+      الرئيسية
+    </button>
+
+    <button class="bottomBtn" onclick="showReportPanel()">
+      <b>🚨</b>
+      بلّغ
+    </button>
+
+    <button class="bottomBtn" onclick="locateMe()">
+      <b>📍</b>
+      موقعي
+    </button>
+
+    <button class="bottomBtn" onclick="clearRoute()">
+      <b>🧭</b>
+      المسار
+    </button>
+
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+/* ==============================
+   خريطة العراق
+============================== */
+
+const map = L.map('map', {
+  zoomControl:false,
+  attributionControl:true
+}).setView([33.3152,44.3661], 6);
+
+L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    maxZoom:19,
+    attribution:'© OpenStreetMap'
+  }
+).addTo(map);
+
+
+/* ==============================
+   المتغيرات
+============================== */
+
+let userMarker = null;
+let destinationMarker = null;
+let routeLine = null;
+let currentPosition = null;
+let navigationActive = false;
+let watchID = null;
+let reports = [];
+
+let reportIcons = {
+  'حادث':'🚗',
+  'زحمة':'🚦',
+  'طريق مغلق':'⛔',
+  'خطر بالطريق':'⚠️',
+  'رادار':'📸',
+  'نقطة تفتيش':'👮'
+};
+
+
+/* ==============================
+   Toast
+============================== */
+
+function toast(message){
+
+  const t = document.getElementById('toast');
+
+  t.innerText = message;
+  t.style.display = 'block';
+
+  setTimeout(()=>{
+    t.style.display='none';
+  },2500);
+}
+
+
+/* ==============================
+   موقع المستخدم
+============================== */
+
+function locateMe(){
+
+  if(!navigator.geolocation){
+
+    toast('المتصفح لا يدعم تحديد الموقع');
+    return;
+  }
+
+  toast('جاري تحديد موقعك...');
+
+  navigator.geolocation.getCurrentPosition(
+
+    position => {
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      currentPosition = [lat,lng];
+
+      if(userMarker){
+        userMarker.setLatLng([lat,lng]);
+      }else{
+
+        userMarker = L.marker([lat,lng],{
+          title:'موقعك الحالي'
+        }).addTo(map);
+
+        userMarker.bindPopup(
+          '<b>📍 موقعك الحالي</b>'
+        );
+      }
+
+      map.setView([lat,lng],16);
+
+      toast('تم تحديد موقعك 📍');
+    },
+
+    error => {
+
+      toast('تعذر الوصول إلى موقعك');
+
+      console.log(error);
+    },
+
+    {
+      enableHighAccuracy:true,
+      timeout:10000,
+      maximumAge:5000
+    }
+  );
+}
+
+
+/* ==============================
+   متابعة GPS
+============================== */
+
+function startGPS(){
+
+  if(!navigator.geolocation) return;
+
+  watchID = navigator.geolocation.watchPosition(
+
+    position => {
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      currentPosition=[lat,lng];
+
+      if(userMarker){
+        userMarker.setLatLng([lat,lng]);
+      }else{
+        userMarker=L.marker([lat,lng]).addTo(map);
+      }
+
+    },
+
+    error => console.log(error),
+
+    {
+      enableHighAccuracy:true,
+      maximumAge:3000,
+      timeout:10000
+    }
+  );
+}
+
+
+/* ==============================
+   البحث
+============================== */
+
+async function searchPlace(){
+
+  const input =
+    document.getElementById('searchInput');
+
+  const query=input.value.trim();
+
+  if(!query){
+    toast('اكتب اسم المكان');
+    return;
+  }
+
+  const results=document.getElementById('results');
+
+  results.style.display='block';
+
+  results.innerHTML=
+    '<div class="result">🔎 جاري البحث...</div>';
+
+  try{
+
+    const url=
+      'https://nominatim.openstreetmap.org/search?' +
+      'format=json&limit=8&countrycodes=iq&accept-language=ar&q=' +
+      encodeURIComponent(query);
+
+    const response=await fetch(url);
+
+    const data=await response.json();
+
+    results.innerHTML='';
+
+    if(!data.length){
+
+      results.innerHTML=
+        '<div class="result">ما لكيت المكان بالعراق</div>';
+
+      return;
+    }
+
+    data.forEach(place=>{
+
+      const div=document.createElement('div');
+
+      div.className='result';
+
+      div.innerHTML=
+        '📍 ' + place.display_name;
+
+      div.onclick=()=>{
+
+        const lat=parseFloat(place.lat);
+        const lon=parseFloat(place.lon);
+
+        selectDestination(
+          lat,
+          lon,
+          place.display_name
+        );
+
+        results.style.display='none';
+      };
+
+      results.appendChild(div);
+
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+    results.innerHTML=
+      '<div class="result">صار خطأ بالبحث</div>';
+  }
+}
+
+
+/* ==============================
+   Enter للبحث
+============================== */
+
+document
+.getElementById('searchInput')
+.addEventListener('keydown',e=>{
+
+  if(e.key==='Enter'){
+    searchPlace();
+  }
+
+});
+
+
+/* ==============================
+   اختيار الوجهة
+============================== */
+
+function selectDestination(lat,lng,name){
+
+  if(destinationMarker){
+    map.removeLayer(destinationMarker);
+  }
+
+  destinationMarker=
+    L.marker([lat,lng]).addTo(map);
+
+  destinationMarker.bindPopup(
+    '<b>📍 الوجهة</b><br>' +
+    name
+  ).openPopup();
+
+  map.setView([lat,lng],14);
+
+  document.getElementById('routePanel')
+    .style.display='block';
+
+  document.getElementById('routeTitle')
+    .innerText=name;
+
+  if(currentPosition){
+
+    calculateRoute(
+      currentPosition[0],
+      currentPosition[1],
+      lat,
+      lng
+    );
+
+  }else{
+
+    document.getElementById('routeInfo')
+      .innerText=
+      'حدد موقعك أولاً لحساب المسار';
+
+  }
+
+}
+
+
+/* ==============================
+   حساب المسار
+============================== */
+
+async function calculateRoute(
+  startLat,
+  startLng,
+  endLat,
+  endLng
+){
+
+  document.getElementById('routeInfo')
+    .innerText='جاري حساب الطريق...';
+
+  try{
+
+    const url=
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${startLng},${startLat};${endLng},${endLat}` +
+      `?overview=full&geometries=geojson&steps=true`;
+
+    const response=await fetch(url);
+
+    const data=await response.json();
+
+    if(!data.routes || !data.routes.length){
+
+      document.getElementById('routeInfo')
+        .innerText='ماكو طريق متاح';
+
+      return;
+    }
+
+    const route=data.routes[0];
+
+    const distance=
+      (route.distance/1000).toFixed(1);
+
+    const minutes=
+      Math.round(route.duration/60);
+
+    document.getElementById('routeInfo')
+      .innerHTML=
+      `🛣️ المسافة: <b>${distance} كم</b><br>` +
+      `⏱️ الوقت التقريبي: <b>${minutes} دقيقة</b>`;
+
+    if(routeLine){
+      map.removeLayer(routeLine);
+    }
+
+    routeLine=L.geoJSON(
+      route.geometry,
+      {
+        style:{
+          color:'#1976d2',
+          weight:7,
+          opacity:.9
+        }
+      }
+    ).addTo(map);
+
+    map.fitBounds(
+      routeLine.getBounds(),
+      {
+        padding:[60,60]
+      }
+    );
+
+    window.currentRoute=route;
+
+  }catch(error){
+
+    console.error(error);
+
+    document.getElementById('routeInfo')
+      .innerText=
+      'تعذر حساب الطريق حالياً';
+  }
+}
+
+
+/* ==============================
+   بدء الملاحة
+============================== */
+
+function startNavigation(){
+
+  if(!currentPosition){
+
+    toast('حدد موقعك أولاً 📍');
+    return;
+  }
+
+  if(!destinationMarker){
+
+    toast('حدد وجهة أولاً');
+    return;
+  }
+
+  navigationActive=true;
+
+  document.getElementById('navInfo')
+    .style.display='block';
+
+  toast('بدأت الملاحة 🚗');
+
+  startGPS();
+
+}
+
+
+/* ==============================
+   إغلاق لوحة المسار
+============================== */
+
+function closeRoute(){
+
+  document.getElementById('routePanel')
+    .style.display='none';
+
+}
+
+
+/* ==============================
+   حذف المسار
+============================== */
+
+function clearRoute(){
+
+  if(routeLine){
+
+    map.removeLayer(routeLine);
+    routeLine=null;
+  }
+
+  if(destinationMarker){
+
+    map.removeLayer(destinationMarker);
+    destinationMarker=null;
+  }
+
+  document.getElementById('routePanel')
+    .style.display='none';
+
+  document.getElementById('navInfo')
+    .style.display='none';
+
+  navigationActive=false;
+
+  toast('تم مسح المسار');
+
+}
+
+
+/* ==============================
+   التكبير
+============================== */
+
+function zoomIn(){
+  map.zoomIn();
+}
+
+function zoomOut(){
+  map.zoomOut();
+}
+
+
+/* ==============================
+   الصفحة الرئيسية
+============================== */
+
+function goHome(){
+
+  map.setView([33.3152,44.3661],6);
+
+  document.getElementById('results')
+    .style.display='none';
+
+}
+
+
+/* ==============================
+   الوضع الليلي
+============================== */
+
+function toggleDark(){
+
+  document.body.classList.toggle('dark');
+
+}
+
+
+/* ==============================
+   لوحة التبليغ
+============================== */
+
+function showReportPanel(){
+
+  const panel=
+    document.getElementById('reportPanel');
+
+  panel.style.display=
+    panel.style.display==='block'
+      ? 'none'
+      : 'block';
+
+}
+
+
+/* ==============================
+   إضافة تبليغ
+============================== */
+
+function addReport(type,icon){
+
+  if(!currentPosition){
+
+    toast('حدد موقعك أولاً حتى نعرف مكان التبليغ');
+    return;
+  }
+
+  const lat=currentPosition[0];
+  const lng=currentPosition[1];
+
+  const report={
+    type:type,
+    icon:icon,
+    lat:lat,
+    lng:lng,
+    time:Date.now()
+  };
+
+  reports.push(report);
+
+  localStorage.setItem(
+    'iraqMapReports',
+    JSON.stringify(reports)
+  );
+
+  const marker=
+    L.marker(
+      [lat,lng],
+      {
+        title:type
+      }
+    ).addTo(map);
+
+  marker.bindPopup(
+    `<b>${icon} ${type}</b><br>
+     تم التبليغ من مستخدم خريطة العراق`
+  );
+
+  document.getElementById('reportPanel')
+    .style.display='none';
+
+  toast(`${icon} تم إضافة بلاغ ${type}`);
+
+}
+
+
+/* ==============================
+   تحميل التبليغات المحفوظة
+============================== */
+
+function loadReports(){
+
+  const saved=
+    localStorage.getItem('iraqMapReports');
+
+  if(!saved) return;
+
+  try{
+
+    reports=JSON.parse(saved);
+
+    reports.forEach(report=>{
+
+      const marker=
+        L.marker(
+          [report.lat,report.lng]
+        ).addTo(map);
+
+      marker.bindPopup(
+        `<b>${report.icon} ${report.type}</b><br>
+        بلاغ من خريطة العراق`
+      );
+
+    });
+
+  }catch(error){
+
+    console.log(error);
+
+  }
+
+}
+
+
+/* ==============================
+   الضغط على الخريطة
+============================== */
+
+map.on('click',e=>{
+
+  const lat=e.latlng.lat;
+  const lng=e.latlng.lng;
+
+  const popupContent=`
+
+    <div style="text-align:center">
+
+      <b>📍 نقطة على الخريطة</b>
+
+      <br><br>
+
+      <button
+        onclick="chooseMapPoint(${lat},${lng})"
+        style="
+        border:0;
+        background:#1976d2;
+        color:white;
+        padding:10px 15px;
+        border-radius:10px;
+        ">
+        اختر كوجهة
+      </button>
+
+    </div>
+
+  `;
+
+  L.popup()
+    .setLatLng(e.latlng)
+    .setContent(popupContent)
+    .openOn(map);
+
+});
+
+
+/* ==============================
+   اختيار نقطة من الخريطة
+============================== */
+
+function chooseMapPoint(lat,lng){
+
+  map.closePopup();
+
+  selectDestination(
+    lat,
+    lng,
+    'الوجهة المحددة'
+  );
+
+}
+
+
+/* ==============================
+   تحميل GPS والتبليغات
+============================== */
+
+loadReports();
+
+
+/* ==============================
+   زر الموقع عند التشغيل
+============================== */
+
+setTimeout(()=>{
+
+  if(navigator.geolocation){
+
+    navigator.geolocation.getCurrentPosition(
+
+      position=>{
+
+        const lat=
+          position.coords.latitude;
+
+        const lng=
+          position.coords.longitude;
+
+        currentPosition=[lat,lng];
+
+        userMarker=
+          L.marker(
+            [lat,lng]
+          ).addTo(map);
+
+        userMarker.bindPopup(
+          '<b>📍 أنت هنا</b>'
+        );
+
+        map.setView(
+          [lat,lng],
+          14
+        );
+
+      },
+
+      ()=>{
+
+        // إذا رفض المستخدم GPS
+        // تبقى الخريطة على العراق
+
+      },
+
+      {
+        enableHighAccuracy:true,
+        timeout:8000
+      }
+
+    );
+
+  }
+
+},1000);
+
+
+/* ==============================
+   إغلاق نتائج البحث عند الضغط
+============================== */
+
+document.addEventListener('click',e=>{
+
+  const results=
+    document.getElementById('results');
+
+  const searchBox=
+    document.querySelector('.searchBox');
+
+  if(
+    !searchBox.contains(e.target) &&
+    !results.contains(e.target)
+  ){
+
+    results.style.display='none';
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
