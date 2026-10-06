@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خريطة العراق - شبيه Waze</title>
+    <!-- مكتبة الخرائط Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Tahoma, sans-serif;
+            background: #0f172a;
+            color: white;
+        }
+        #map {
+            width: 100%;
+            height: 75vh;
+        }
+        .header {
+            background: #1e293b;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #38bdf8;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .controls {
+            padding: 15px;
+            background: #1e293b;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:active {
+            background: #0369a1;
+        }
+        .alert-btn {
+            background: #e11d48;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">🗺️ نظام الملاحة العراقي (شبيه Waze)</div>
+
+    <!-- الخريطة -->
+    <div id="map"></div>
+
+    <!-- أزرار التحكم والتبليغات -->
+    <div class="controls">
+        <button onclick="locateUser()">📍 موقعي الحالي</button>
+        <button class="alert-btn" onclick="addAlert('🚨 زحام مروري')">⚠️ تبليغ زحام</button>
+        <button class="alert-btn" onclick="addAlert('👮‍♂️ سيطرة / رادار')">🚨 تبليغ سيطرة</button>
+    </div>
+
+    <!-- مكتبة الخرائط Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // إعداد الخريطة على مركز العراق (بغداد كمثال افتراضي)
+        var map = L.map('map').setView([33.3152, 44.3661], 6);
+
+        // إضافة طبقة الخريطة (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // زر تحديد موقع المستخدم الحقيقي على الخريطة
+        function locateUser() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    
+                    map.setView([lat, lng], 15);
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup("<b>أنت هنا!</b>").openPopup();
+                }, function() {
+                    alert("عذراً، لم نتمكن من تحديد موقعك. تأكد من تفعيل الـ GPS.");
+                });
+            } else {
+                alert("متصفحك لا يدعم تحديد الموقع الجغرافي.");
+            }
+        }
+
+        // دالة إضافة تبليغ على الخريطة
+        function addAlert(type) {
+            map.locate({setView: true, maxZoom: 16});
+            map.on('locationfound', function(e) {
+                L.marker(e.latlng).addTo(map)
+                    .bindPopup("<b>تبليغ جديد:</b> " + type).openPopup();
+                alert("تم إضافة التبليغ بنجاح على خريطتك!");
+            });
+        }
+    </script>
+</body>
+</html>
